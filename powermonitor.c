@@ -1,12 +1,14 @@
 #include <libudev.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int main (void)
+int main (int argc, char* argv[])
 {
 	struct udev *udev;
 	struct udev_device *dev;
 	struct udev_monitor *mon;
+	int isAC, isBattery, isOnline, fd;
 
 	/* Create the udev object */
 	udev = udev_new();
@@ -19,25 +21,47 @@ int main (void)
 	mon = udev_monitor_new_from_netlink(udev, "udev");
 	udev_monitor_filter_add_match_subsystem_devtype(mon, "power_supply", NULL);
 	udev_monitor_enable_receiving(mon);
+	printf("[INFO] Monitoring...\n");
 
 	while (1) {
 		dev = udev_monitor_receive_device(mon);
-		if (dev) {
-			printf("\n[INFO] Got Device\n");
-			printf("   [INFO] Device Name: %s\n", udev_device_get_sysname(dev));
-						
-			if (udev_device_get_sysname(dev) == "ADP1") {
-				if (udev_device_get_sysattr_value(dev, "online") == "1") {
-					printf("\n    [INFO] AC Adapter State: Online");
-				}
-				else if (udev_device_get_sysattr_value(dev, "online") == "0") {
-					printf("\n    [INFO] AC Adapter State: Offline");
+			if (dev) {
+				isAC = strcmp(udev_device_get_sysname(dev), "ADP1");
+
+				if (isAC == 0) {
+					printf("\n  [DEBUG] Found ADP1\n");
+					isOnline = strcmp(udev_device_get_sysattr_value(dev, "online"), "1");
+
+					if (isOnline == 0) {
+						printf("\n  [INFO] AC Adapter State: Online\n");
+						changeBrightness(937);
+					}
+					else if (isOnline < 0){
+						printf("\n  [INFO] AC Adapter State: Offline\n");
+						changeBrightness(92);
+					}
 				}
 			}
-
-			udev_device_unref(dev);
+		udev_device_unref(dev);
 		}
-	}
-
 	udev_unref(udev);
+	return 0;
+}
+
+int changeBrightness(int v) {
+
+	int val = v;
+
+	/* FILE structure pointers, for the return value of fopen() */
+	FILE* f_write;
+
+	f_write = fopen("/sys/class/backlight/intel_backlight/brightness", "w");
+	if (!f_write) { /* open operation failed. */
+	    perror("Failed opening file '/sys/class/backlight/intel_backlight/brightness' for reading:");
+	    exit(1);
+	}
+	fprintf(f_write, "%i", val);
+	fclose(f_write);
+
+	return;
 }
