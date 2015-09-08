@@ -8,7 +8,7 @@ int main (int argc, char* argv[])
 	struct udev *udev;
 	struct udev_device *dev;
 	struct udev_monitor *mon;
-	int isAC, isBattery, isOnline, fd;
+	int fd;
 
 	/* Create the udev object */
 	udev = udev_new();
@@ -26,17 +26,16 @@ int main (int argc, char* argv[])
 	while (1) {
 		dev = udev_monitor_receive_device(mon);
 			if (dev) {
-				isAC = strcmp(udev_device_get_sysname(dev), "ADP1");
-
-				if (isAC == 0) {
+				
+				if(strcmp(udev_device_get_sysname(dev), "ADP1") == 0) {
 					printf("\n  [DEBUG] Found ADP1\n");
-					isOnline = strcmp(udev_device_get_sysattr_value(dev, "online"), "1");
-
-					if (isOnline == 0) {
+					
+					if(strcmp(udev_device_get_sysattr_value(dev, "online"), "1") == 0) {
 						printf("\n  [INFO] AC Adapter State: Online\n");
 						changeBrightness(937);
 					}
-					else if (isOnline < 0){
+					
+					else if (strcmp(udev_device_get_sysattr_value(dev, "online"), "1") < 0) {
 						printf("\n  [INFO] AC Adapter State: Offline\n");
 						changeBrightness(92);
 					}
