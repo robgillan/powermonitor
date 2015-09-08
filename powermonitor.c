@@ -42,6 +42,7 @@ int main (int argc, char* argv[])
 				}
 			}
 		udev_device_unref(dev);
+		sleep(2);
 		}
 	udev_unref(udev);
 	return 0;
